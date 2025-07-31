@@ -1,0 +1,206 @@
+<!DOCTYPE html><html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MumcularPost Eşleştirme Oyunu</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #f9f3e7, #ffe5ec);
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    header {
+      background-color: #ffb3c6;
+      padding: 1rem;
+      font-size: 1.5rem;
+      color: #fff;
+      position: relative;
+    }
+    .creator {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: #fff;
+      color: #ff4d6d;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+    #intro {
+      margin: 2rem;
+      font-size: 1.2rem;
+    }
+    #startBtn {
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      background: #ff4d6d;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    #gameContainer {
+      display: none;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+      padding: 2rem;
+    }
+    .card {
+      width: 100px;
+      height: 100px;
+      background: #fff;
+      border: 2px solid #ff4d6d;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      cursor: pointer;
+      user-select: none;
+    }
+    .card.flipped, .card.matched {
+      background: #ff4d6d;
+      color: #fff;
+    }
+    #status {
+      font-size: 1.5rem;
+      margin-top: 2rem;
+      font-weight: bold;
+      color: #ff4d6d;
+    }
+    #timer {
+      font-size: 1.2rem;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    MumcularPost Eşleştirme Oyunu
+    <div class="creator">Oyunun Kurucusu: YASİN</div>
+  </header>  <div id="intro">
+    <p>Merhaba! Bu oyunda isim kartlarını eşleştirmeye çalışacaksınız. Aynı ismi 2 kartta bulduğunuzda eşleşme gerçekleşir. <br>
+    <strong>Toplam 10 dakika süreniz var.</strong><br><br>
+    Tüm kartları doğru eşleştirirseniz, ödül kazanabilirsiniz. Bazen sürpriz yazılar da çıkacak :)<br><br>
+    Hazır mısın?</p>
+    <button id="startBtn">MumcularPost Oyununa Başla</button>
+  </div>  <div id="timer"></div>
+  <div id="gameContainer"></div>
+  <div id="status"></div>  <script>
+    const names = [
+      "yasin", "tanem", "emir", "resul", "ilkay", "berat", "umut", "nehir", "ezgi", "emre",
+      "admin", "göktuğ", "nisa", "eylül", "demokan", "selim", "nilsu", "ibrahim", "hira", "aras",
+      "ece", "bade", "buse", "muhammet", "hakan", "şervan", "sarp", "erenosman", "hümeyra", "gülsen", "mustafa"
+    ];
+
+    let cards = [];
+    let flipped = [];
+    let matchedCount = 0;
+    let startTime;
+    let timerInterval;
+
+    const gameContainer = document.getElementById("gameContainer");
+    const startBtn = document.getElementById("startBtn");
+    const intro = document.getElementById("intro");
+    const timerDisplay = document.getElementById("timer");
+    const statusDisplay = document.getElementById("status");
+
+    startBtn.addEventListener("click", startGame);
+
+    function startGame() {
+      intro.style.display = "none";
+      gameContainer.style.display = "flex";
+      statusDisplay.textContent = "";
+      matchedCount = 0;
+      cards = shuffle([...names, ...names]);
+      gameContainer.innerHTML = "";
+      cards.forEach(name => {
+        const card = document.createElement("div");
+        card.classList.add("card");
+        card.dataset.name = name;
+        card.addEventListener("click", handleCardClick);
+        gameContainer.appendChild(card);
+      });
+
+      startTime = Date.now();
+      updateTimer();
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    function handleCardClick(e) {
+      const card = e.currentTarget;
+      if (card.classList.contains("flipped") || card.classList.contains("matched") || flipped.length === 2) return;
+
+      card.textContent = card.dataset.name;
+      card.classList.add("flipped");
+      flipped.push(card);
+
+      if (flipped.length === 2) {
+        setTimeout(checkMatch, 800);
+      }
+    }
+
+    function checkMatch() {
+      const [card1, card2] = flipped;
+      if (card1.dataset.name === card2.dataset.name) {
+        card1.classList.add("matched");
+        card2.classList.add("matched");
+        matchedCount++;
+        if (matchedCount === names.length) {
+          clearInterval(timerInterval);
+          statusDisplay.textContent = "Tebrikler! Adminle görüş ve ödülünü al!";
+        } else {
+          maybeShowMessage();
+        }
+      } else {
+        card1.textContent = "";
+        card2.textContent = "";
+        card1.classList.remove("flipped");
+        card2.classList.remove("flipped");
+      }
+      flipped = [];
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function updateTimer() {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const remaining = 600 - elapsed;
+      const minutes = Math.floor(remaining / 60);
+      const seconds = remaining % 60;
+      timerDisplay.textContent = `Süre: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+      if (remaining <= 0) {
+        clearInterval(timerInterval);
+        gameContainer.style.display = "none";
+        statusDisplay.textContent = "Süre bitti! Kaybettin!";
+      }
+    }
+
+    function maybeShowMessage() {
+      const messages = [
+        "Hadi ama, bitir ve kazan!",
+        "Oyunu kuran kişi: YASİN",
+        "Hepsini eşleştirene ödül var!"
+      ];
+      if (Math.random() < 0.3) {
+        statusDisplay.textContent = messages[Math.floor(Math.random() * messages.length)];
+        setTimeout(() => {
+          statusDisplay.textContent = "";
+        }, 3000);
+      }
+    }
+  </script></body>
+</html>
